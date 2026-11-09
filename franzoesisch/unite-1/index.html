@@ -151,6 +151,7 @@ button { cursor: pointer; }
   box-shadow: 0 3px 0 var(--edge);
   transition: transform .12s ease, box-shadow .12s ease, border-color .12s;
 }
+.mode:last-child:nth-child(odd) { grid-column: 1 / -1; }
 .mode:hover { border-color: var(--accent); box-shadow: 0 3px 0 var(--accent); }
 .mode:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--accent); }
 .mode b { font-family: var(--display); font-size: 21px; line-height: 1.15; font-weight: 800; }
@@ -283,6 +284,17 @@ details.words[open] summary::after { content: "–"; }
 .miss .de { color: var(--muted); }
 .stack { display: flex; flex-direction: column; gap: 10px; }
 
+.listen-row { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin: 10px 0 6px; }
+.listen {
+  display: inline-flex; align-items: center; gap: 8px; border-radius: 99px; padding: 10px 20px;
+  font-weight: 700; font-size: 18px; background: var(--plaque-ink); color: var(--plaque); border: 2px solid var(--plaque-ink);
+}
+.listen.slow { background: transparent; color: var(--plaque-ink); border-color: rgba(255,255,255,.7); }
+.listen:active { transform: translateY(1px); }
+.listen svg { width: 22px; height: 22px; }
+.hint-btn { background: none; border: 0; color: var(--plaque-ink); text-decoration: underline; opacity: .85; font-size: 15px; padding: 4px; }
+.hint { font-size: 16px; opacity: .92; }
+
 canvas.confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 20; }
 
 @media (prefers-reduced-motion: reduce) {
@@ -323,6 +335,7 @@ canvas.confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-
     cards:   { name: "Karteikarten", desc: "Wort ansehen, umdrehen, selbst prüfen.", tag: "Zum Einprägen", useDir: true },
     choice:  { name: "Wort-Quiz", desc: "Die richtige Übersetzung antippen.", tag: "4 Antworten", useDir: true },
     write:   { name: "Schreiben", desc: "Deutsch sehen, Französisch tippen.", tag: "Für Profis", useDir: false },
+    dictee:  { name: "Hördiktat", desc: "Wort anhören und richtig aufschreiben.", tag: "Hören + Schreiben", useDir: false, needsSpeech: true },
     article: { name: "le, la oder l'?", desc: "Den richtigen Artikel finden.", tag: "Artikel", useDir: false },
   };
   const DIRS = { "fr-de": "Französisch → Deutsch", "de-fr": "Deutsch → Französisch", "mix": "Gemischt" };
@@ -356,20 +369,21 @@ canvas.confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-
 
   const SPEAKER = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16.5 8.5a5 5 0 0 1 0 7"/><path d="M19 6a8.5 8.5 0 0 1 0 12"/></svg>';
   const canSpeak = (() => { try { return "speechSynthesis" in window && typeof SpeechSynthesisUtterance === "function"; } catch (e) { return false; } })();
-  let frVoice = null;
+  let frVoice = null, voicesLoaded = false;
   function pickVoice() {
     try {
       const vs = speechSynthesis.getVoices();
+      voicesLoaded = vs.length > 0;
       frVoice = vs.find(v => /^fr(-|_)FR/i.test(v.lang)) || vs.find(v => /^fr/i.test(v.lang)) || null;
     } catch (e) {}
   }
   if (canSpeak) { pickVoice(); try { speechSynthesis.onvoiceschanged = pickVoice; } catch (e) {} }
-  function speak(text) {
+  function speak(text, rate = 0.85) {
     if (!canSpeak) return;
     try {
       speechSynthesis.cancel();
       const u = new SpeechSynthesisUtterance(text.replace(/…|\.\.\.|\?/g, " ").trim());
-      u.lang = "fr-FR"; u.rate = 0.85;
+      u.lang = "fr-FR"; u.rate = rate;
       if (frVoice) u.voice = frVoice;
       speechSynthesis.speak(u);
     } catch (e) {}
@@ -406,6 +420,9 @@ canvas.confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-
     }
     if (mode === "article") {
       return { w, prompt: w.noun, promptFr: true, ask: "Welcher Artikel passt?", correct: w.art, options: ["le", "la", "l'"] };
+    }
+    if (mode === "dictee") {
+      return { w, prompt: "", promptFr: true, ask: w.art ? "Hör gut zu und schreib das Wort mit Artikel auf." : "Hör gut zu und schreib es auf." };
     }
     if (mode === "write") {
       return { w, prompt: w.de, promptFr: false, ask: w.art ? "Schreib das französische Wort mit Artikel." : "Schreib es auf Französisch." };
@@ -472,7 +489,7 @@ canvas.confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-
     S.i++;
     if (S.i >= S.queue.length) { S.screen = "result"; render(); return; }
     S.q = makeQuestion(S.queue[S.i]);
-    S.answered = false; S.res = null; S.typed = ""; S.flipped = false; S.picked = null;
+    S.answered = false; S.res = null; S.typed = ""; S.flipped = false; S.picked = null; S.hint = false;
     render();
   }
 
@@ -512,7 +529,7 @@ canvas.confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-
       <section>
         <h2 class="label">Übungen</h2>
         <div class="modes">
-          ${Object.entries(MODES).map(([k, v]) => `
+          ${Object.entries(MODES).filter(([, v]) => !v.needsSpeech || canSpeak).map(([k, v]) => `
             <button class="mode" data-act="start" data-mode="${k}">
               <em>${v.tag}</em><b>${v.name}</b><span>${v.desc}</span>
             </button>`).join("")}
@@ -560,7 +577,7 @@ canvas.confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-
     const promptHtml = mode === "article"
       ? `<span class="gap" aria-label="Lücke"></span>${esc(q.prompt)}`
       : esc(q.prompt);
-    const showPromptSpeaker = q.promptFr && mode !== "article";
+    const showPromptSpeaker = q.promptFr && mode !== "article" && mode !== "dictee";
     let body = "";
 
     if (mode === "choice" || mode === "article") {
@@ -576,11 +593,11 @@ canvas.confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-
             ${mode === "choice" ? `<span class="k" aria-hidden="true">${i + 1}</span>` : ""}<span>${esc(o)}</span></button>`;
         }).join("")}
       </div>`;
-    } else if (mode === "write") {
+    } else if (mode === "write" || mode === "dictee") {
       body = `<form class="write" id="wform" autocomplete="off">
         <div class="write-row">
           <input id="answer" type="text" lang="fr" autocapitalize="off" autocorrect="off" spellcheck="false"
-            aria-label="Deine Antwort auf Französisch" placeholder="z. B. le parc" value="${esc(S.typed)}" ${S.answered ? "disabled" : ""}>
+            aria-label="Deine Antwort auf Französisch" placeholder="${mode === "dictee" ? "Was hörst du?" : "z. B. le parc"}" value="${esc(S.typed)}" ${S.answered ? "disabled" : ""}>
         </div>
         ${S.answered ? "" : `
         <div class="keys" aria-label="Sonderzeichen">
@@ -612,7 +629,7 @@ canvas.confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-
         ? `<b>${esc(w.fr)}</b> = ${esc(w.de)}`
         : `<b>${esc(w.fr)}</b> <span class="ipa">${esc(w.ipa)}</span> = ${esc(w.de)}`;
       const lead = r.lead ? `<p>${esc(r.lead)}</p>` : "";
-      const yours = mode === "write" && r.kind !== "right" ? `<p>Du hast geschrieben: <b>${esc(S.typed)}</b></p>` : "";
+      const yours = (mode === "write" || mode === "dictee") && r.kind !== "right" ? `<p>Du hast geschrieben: <b>${esc(S.typed)}</b></p>` : "";
       fb = `<div class="fb ${r.kind}" role="status">
         <h3>${esc(r.title)}</h3>
         ${lead}${yours}
@@ -630,15 +647,33 @@ canvas.confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-
       </div>
       <div class="meter thin" aria-hidden="true"><span style="width:${(S.i / total) * 100}%"></span></div>
       <p class="ask">${esc(q.ask)}</p>
-      <div class="plaque">
+      ${mode === "dictee" ? dicteePlaque(q) : `<div class="plaque">
         <div class="plaque-inner">
           <div class="arr">${MODES[mode].name}</div>
           <div class="word" lang="${q.promptFr ? "fr" : "de"}" style="${canSpeak && showPromptSpeaker ? "padding:0 36px" : ""}">${promptHtml}</div>
           ${showPromptSpeaker ? speakBtn(q.prompt) : ""}
         </div>
-      </div>
+      </div>`}
       ${body}
       ${fb}`;
+  }
+
+  function dicteePlaque(q) {
+    const w = q.w;
+    const showHint = w.flea || S.hint || S.answered;
+    return `<div class="plaque">
+        <div class="plaque-inner">
+          <div class="arr">Hördiktat</div>
+          <div class="listen-row">
+            <button class="listen" data-act="say" aria-label="Wort anhören">${SPEAKER}<span>Anhören</span></button>
+            <button class="listen slow" data-act="say-slow" aria-label="Wort langsam anhören">Langsam</button>
+          </div>
+          ${showHint
+            ? `<div class="hint">${w.flea ? "Fragewort: " : "Bedeutung: "}${esc(w.de)}</div>`
+            : `<button class="hint-btn" data-act="hint">Bedeutung zeigen</button>`}
+        </div>
+      </div>
+      ${voicesLoaded && !frVoice ? `<p class="small" style="margin:0;text-align:center">Auf diesem Gerät ist keine französische Stimme installiert. Die Aussprache klingt deshalb vielleicht nicht französisch.</p>` : ""}`;
   }
 
   function resultView() {
@@ -686,8 +721,9 @@ canvas.confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-
 
   function afterRender() {
     if (S.screen === "quiz") {
+      if (S.mode === "dictee" && !S.answered && S.spokenFor !== S.i) { S.spokenFor = S.i; speak(S.q.w.fr); }
       if (S.answered) { const n = document.getElementById("nextBtn"); if (n) n.focus({ preventScroll: true }); }
-      else if (S.mode === "write") { const inp = document.getElementById("answer"); if (inp && matchMedia("(pointer: fine)").matches) inp.focus(); }
+      else if (S.mode === "write" || S.mode === "dictee") { const inp = document.getElementById("answer"); if (inp && matchMedia("(pointer: fine)").matches) inp.focus(); }
       const f = document.getElementById("wform");
       if (f) f.addEventListener("submit", e => { e.preventDefault(); if (!S.answered) answerWrite(document.getElementById("answer").value); });
     }
@@ -710,6 +746,9 @@ canvas.confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-
     const act = b.dataset.act;
     switch (act) {
       case "speak": speak(b.dataset.text); break;
+      case "say": speak(S.q.w.fr); break;
+      case "say-slow": speak(S.q.w.fr, 0.55); break;
+      case "hint": S.hint = true; S.typed = (document.getElementById("answer") || {}).value || ""; render(); break;
       case "dir": dir = b.dataset.v; save(KEY + ".dir", dir); render(); break;
       case "start": startRound(b.dataset.mode); break;
       case "home": S = { screen: "home" }; render(); window.scrollTo({ top: 0 }); break;

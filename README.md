@@ -14,6 +14,7 @@ Die Datei einfach im Browser öffnen, sie braucht keine Installation.
 - **Karteikarten**: Wort ansehen, umdrehen, selbst prüfen.
 - **Wort-Quiz**: aus 4 Antworten die richtige Übersetzung wählen (Französisch → Deutsch, Deutsch → Französisch oder gemischt).
 - **Schreiben**: das deutsche Wort sehen und das französische Wort mit Artikel tippen. Fehlende Akzente, Artikel und der „Floh“ auf dem *où* werden erkannt.
+- **Hördiktat**: das französische Wort wird vorgelesen (normal oder langsam) und muss richtig aufgeschrieben werden. Auf Wunsch wird die deutsche Bedeutung angezeigt.
 - **le, la oder l'?**: den richtigen Artikel finden.
 
 Dazu: Aussprache zum Anhören (Lautsprecher-Knopf), Lautschrift, Hinweise auf
