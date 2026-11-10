@@ -1,0 +1,1024 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ma ville</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Figtree:wght@400;600;700&family=Noto+Sans:wght@400&display=swap">
+<style>
+/* Layout: one column. Home is a night-time town board: 16 places that light up as their word is learned.
+   Exercises are single-task cards with one clear action at the bottom. */
+:root {
+  --bg: #EDF2F8;
+  --ink: #12253B;
+  --muted: #54677D;
+  --card: #FFFFFF;
+  --edge: #D2DCE8;
+  --accent: #FFC61A;        /* street-lamp yellow */
+  --accent-deep: #C99200;
+  --accent-ink: #12253B;
+  --night: #14304D;         /* the town board, same in both themes */
+  --night-edge: #0C2136;
+  --off: #23466A;
+  --off-ink: #A9C0D8;
+  --off-m: #8FBCFF;
+  --off-f: #FF9DBF;
+  --lit: #FFF7D4;
+  --lit-ink: #12253B;
+  --lit-m: #1F58CC;
+  --lit-f: #C4245E;
+  --night-ink: #FFFFFF;
+  --lvl: #12A572;
+  --due: #E8504F;
+  --m: #1F58CC;             /* masculine: le */
+  --f: #C4245E;             /* feminine: la */
+  --ok: #0C8A5E;
+  --ok-soft: #D9F3E7;
+  --bad: #CF3D3D;
+  --bad-soft: #FBE3E1;
+  --warn: #8F5E00;
+  --warn-soft: #FFEFC7;
+  --shadow: rgba(18, 37, 59, .16);
+  --display: "Bricolage Grotesque", "Trebuchet MS", system-ui, sans-serif;
+  --body: "Figtree", "Segoe UI", system-ui, sans-serif;
+  --ipa: "Noto Sans", "DejaVu Sans", "Segoe UI", sans-serif;
+  --emoji: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0B1623; --ink: #E8EEF6; --muted: #9DB0C5; --card: #14263A; --edge: #2A415A;
+    --night: #08121D; --night-edge: #27425E; --off: #1A3350;
+    --m: #86B4FF; --f: #FF93B8;
+    --ok: #3FCF98; --ok-soft: #10362A; --bad: #FF8080; --bad-soft: #421F1F;
+    --warn: #FFCB66; --warn-soft: #3A2D10; --shadow: rgba(0, 0, 0, .5);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0B1623; --ink: #E8EEF6; --muted: #9DB0C5; --card: #14263A; --edge: #2A415A;
+  --night: #08121D; --night-edge: #27425E; --off: #1A3350;
+  --m: #86B4FF; --f: #FF93B8;
+  --ok: #3FCF98; --ok-soft: #10362A; --bad: #FF8080; --bad-soft: #421F1F;
+  --warn: #FFCB66; --warn-soft: #3A2D10; --shadow: rgba(0, 0, 0, .5);
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  background: var(--bg); color: var(--ink);
+  font-family: var(--body); font-size: 17px; line-height: 1.45;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 18px 44px;
+}
+button, input { font: inherit; color: inherit; }
+button { cursor: pointer; -webkit-tap-highlight-color: transparent; }
+:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; }
+h1, h2, h3, p { margin: 0; }
+.app { max-width: 540px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+
+.g.m { color: var(--m); } .g.f { color: var(--f); }
+.ipa { font-family: var(--ipa); font-weight: 400; color: var(--muted); font-size: .86em; }
+.pic { font-family: var(--emoji); line-height: 1; }
+.eyebrow { font-size: 12.5px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.small { font-size: 14.5px; color: var(--muted); }
+
+/* ---------- Buttons ---------- */
+.btn {
+  border: 0; border-radius: 14px; padding: 13px 20px; font-weight: 700; font-size: 18px; width: 100%;
+  background: var(--accent); color: var(--accent-ink); box-shadow: 0 4px 0 var(--accent-deep);
+  transition: transform .08s, box-shadow .08s;
+}
+.btn:active:not(:disabled) { transform: translateY(3px); box-shadow: 0 1px 0 var(--accent-deep); }
+.btn:disabled { opacity: .45; cursor: default; }
+.btn.plain { background: var(--card); color: var(--ink); box-shadow: 0 4px 0 var(--edge); border: 2px solid var(--edge); }
+.btn.plain:active:not(:disabled) { box-shadow: 0 1px 0 var(--edge); }
+.icon-btn {
+  width: 42px; height: 42px; flex: none; border-radius: 50%; border: 2px solid var(--edge); background: var(--card);
+  display: grid; place-items: center;
+}
+.icon-btn svg { width: 20px; height: 20px; }
+.stack { display: flex; flex-direction: column; gap: 12px; }
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+/* ---------- Home ---------- */
+.hd { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; }
+.hd h1 { font-family: var(--display); font-weight: 800; font-size: clamp(38px, 11vw, 54px); line-height: .95; letter-spacing: -.02em; }
+.hd-tools { display: flex; align-items: center; gap: 8px; }
+.streak {
+  display: inline-flex; align-items: center; gap: 6px; padding: 8px 12px; border-radius: 99px;
+  background: var(--card); border: 2px solid var(--edge); font-weight: 700; font-size: 15px; font-variant-numeric: tabular-nums;
+}
+.streak i { width: 10px; height: 10px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 35%, transparent); }
+.streak.cold i { background: var(--edge); box-shadow: none; }
+
+.cta {
+  display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 4px 14px; text-align: left; width: 100%;
+  border: 0; border-radius: 20px; padding: 18px 20px; background: var(--accent); color: var(--accent-ink);
+  box-shadow: 0 5px 0 var(--accent-deep); transition: transform .08s, box-shadow .08s;
+}
+.cta:active { transform: translateY(4px); box-shadow: 0 1px 0 var(--accent-deep); }
+.cta b { font-family: var(--display); font-weight: 800; font-size: 28px; line-height: 1.05; }
+.cta span { grid-column: 1; font-size: 15.5px; font-weight: 600; opacity: .85; }
+.cta svg { grid-column: 2; grid-row: 1 / span 2; width: 34px; height: 34px; }
+
+.sec-hd { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
+.sec-hd h2 { font-family: var(--display); font-weight: 800; font-size: 22px; white-space: nowrap; }
+.sec-hd span { font-weight: 700; color: var(--muted); font-variant-numeric: tabular-nums; font-size: 15px; text-align: right; }
+
+.town {
+  background: var(--night); border: 3px solid var(--night-edge); border-radius: 22px; padding: 8px;
+  display: grid; grid-template-columns: repeat(4, 1fr); grid-auto-rows: 1fr; gap: 6px;
+}
+.place {
+  position: relative; overflow: hidden; min-width: 0; min-height: 90px;
+  border: 0; border-radius: 12px; padding: 8px 2px 11px;
+  background: var(--off); color: var(--off-ink);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+  transition: transform .1s;
+}
+.place:active { transform: scale(.96); }
+.place .pic { font-size: clamp(26px, 8.4vw, 38px); filter: grayscale(1) brightness(1.1); opacity: .5; }
+.place .nm { font-size: clamp(10px, 2.7vw, 14px); font-weight: 700; line-height: 1.15; text-align: center; overflow-wrap: anywhere; letter-spacing: -.01em; }
+.place .g.m { color: var(--off-m); } .place .g.f { color: var(--off-f); }
+.place.on { background: var(--lit); color: var(--lit-ink); box-shadow: 0 0 14px -2px color-mix(in srgb, var(--accent) 55%, transparent); }
+.place.on .pic { filter: none; opacity: 1; }
+.place.on .g.m { color: var(--lit-m); } .place.on .g.f { color: var(--lit-f); }
+.place.gold { box-shadow: inset 0 0 0 3px var(--accent), 0 0 16px 0 color-mix(in srgb, var(--accent) 70%, transparent); }
+.place .lvl { position: absolute; left: 0; right: 0; bottom: 0; height: 5px; background: rgba(0, 0, 0, .16); }
+.place .lvl i { display: block; height: 100%; background: var(--lvl); }
+.place.gold .lvl i { background: var(--accent-deep); }
+.place .due { position: absolute; top: 5px; right: 5px; width: 10px; height: 10px; border-radius: 50%; background: var(--due); }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 16px; margin-top: 10px; font-size: 14px; color: var(--muted); }
+.legend b { font-weight: 700; }
+
+.extras { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.extras > :last-child:nth-child(odd) { grid-column: 1 / -1; }
+.extra {
+  text-align: left; background: var(--card); border: 2px solid var(--edge); border-radius: 16px; padding: 13px 14px;
+  display: flex; flex-direction: column; gap: 3px; box-shadow: 0 3px 0 var(--edge); min-width: 0;
+}
+.extra:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--edge); }
+.extra b { font-family: var(--display); font-weight: 800; font-size: 19px; line-height: 1.15; }
+.extra span { font-size: 14.5px; color: var(--muted); }
+.reset { display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; }
+.linkish { background: none; border: 0; padding: 4px; color: var(--muted); text-decoration: underline; font-size: 14px; }
+
+/* ---------- Word sheet ---------- */
+.veil {
+  position: fixed; inset: 0; z-index: 30; background: rgba(8, 18, 29, .6);
+  display: flex; align-items: flex-end; justify-content: center;
+  padding: max(16px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) max(16px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
+}
+@media (min-height: 700px) and (min-width: 560px) { .veil { align-items: center; } }
+.sheet {
+  background: var(--card); border-radius: 22px; padding: 20px; width: 100%; max-width: 440px; max-height: 100%; overflow: auto;
+  display: flex; flex-direction: column; gap: 12px; animation: rise .2s ease-out;
+}
+.sheet-top { display: flex; gap: 14px; align-items: center; }
+.sheet-top .pic { font-size: 52px; }
+.sheet-top .w { font-family: var(--display); font-weight: 800; font-size: 30px; line-height: 1.1; overflow-wrap: anywhere; }
+.sheet .note { background: var(--warn-soft); color: var(--ink); border-radius: 12px; padding: 10px 12px; font-size: 15.5px; }
+@keyframes rise { from { transform: translateY(14px); opacity: .5; } to { transform: none; opacity: 1; } }
+
+/* ---------- Exercise shell ---------- */
+.run-top { display: flex; align-items: center; gap: 12px; }
+.track { flex: 1; height: 12px; border-radius: 99px; background: var(--edge); overflow: hidden; }
+.track i { display: block; height: 100%; border-radius: 99px; background: var(--accent); transition: width .35s ease; }
+.run-top .n { font-weight: 700; color: var(--muted); font-variant-numeric: tabular-nums; font-size: 15px; }
+.ask { font-family: var(--display); font-weight: 800; font-size: 23px; line-height: 1.15; text-wrap: balance; }
+
+.prompt {
+  background: var(--card); border: 2px solid var(--edge); border-radius: 20px; padding: 18px;
+  display: flex; align-items: center; gap: 16px; min-width: 0;
+}
+.prompt .pic { font-size: 54px; flex: none; }
+.prompt .txt { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.prompt .big { font-family: var(--display); font-weight: 800; font-size: clamp(28px, 8vw, 38px); line-height: 1.1; overflow-wrap: anywhere; }
+.prompt .blank { display: inline-block; width: 1.6em; border-bottom: 4px solid currentColor; margin-right: .22em; }
+.prompt.center { flex-direction: column; text-align: center; padding-block: 22px; }
+.prompt.center .txt { align-items: center; }
+.listen-row { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+.pill {
+  display: inline-flex; align-items: center; gap: 8px; border-radius: 99px; padding: 10px 18px; font-weight: 700; font-size: 17px;
+  background: var(--night); color: var(--night-ink); border: 2px solid var(--night);
+}
+:root[data-theme="dark"] .pill { border-color: var(--night-edge); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .pill { border-color: var(--night-edge); } }
+.pill.ghost { background: transparent; color: var(--ink); border-color: var(--edge); }
+.pill svg { width: 20px; height: 20px; }
+.intro-tag { align-self: center; background: var(--accent); color: var(--accent-ink); font-weight: 700; font-size: 13px; letter-spacing: .08em; text-transform: uppercase; padding: 4px 12px; border-radius: 99px; }
+.intro-note { background: var(--warn-soft); border-radius: 14px; padding: 12px 14px; font-size: 16px; }
+
+.opts { display: grid; gap: 10px; }
+.opts.three { grid-template-columns: repeat(3, 1fr); }
+.opt {
+  display: flex; align-items: center; gap: 12px; text-align: left; min-height: 58px; min-width: 0;
+  background: var(--card); border: 2px solid var(--edge); border-radius: 16px; padding: 12px 14px;
+  font-size: 19px; font-weight: 700; box-shadow: 0 3px 0 var(--edge); transition: transform .08s, box-shadow .08s;
+}
+.opt span:last-child { min-width: 0; overflow-wrap: anywhere; }
+.opts.three .opt { justify-content: center; font-family: var(--display); font-weight: 800; font-size: 28px; }
+.opt:active:not(:disabled) { transform: translateY(2px); box-shadow: 0 1px 0 var(--edge); }
+.opt:disabled { cursor: default; }
+.opt .k { flex: none; width: 26px; height: 26px; border-radius: 8px; background: var(--bg); color: var(--muted); display: grid; place-items: center; font-size: 13px; }
+.opt.right { background: var(--ok-soft); border-color: var(--ok); box-shadow: 0 3px 0 var(--ok); }
+.opt.wrong { background: var(--bad-soft); border-color: var(--bad); box-shadow: 0 3px 0 var(--bad); }
+.opt.dim { opacity: .45; }
+
+.slots { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; min-height: 56px; padding: 10px; border-radius: 16px; background: var(--card); border: 2px dashed var(--edge); }
+.slots .fix { font-family: var(--display); font-weight: 800; font-size: 24px; margin-right: 4px; }
+.slot { width: 40px; height: 46px; border-radius: 10px; border-bottom: 3px solid var(--edge); }
+.slot.word { width: 64px; }
+.gap-after { margin-right: 14px; }
+.pool { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+.tile {
+  min-width: 44px; height: 48px; padding: 0 12px; border-radius: 12px; border: 2px solid var(--edge); background: var(--card);
+  font-size: 22px; font-weight: 700; box-shadow: 0 3px 0 var(--edge); transition: transform .08s;
+}
+.tile:active:not(:disabled) { transform: translateY(2px); box-shadow: 0 1px 0 var(--edge); }
+.tile:disabled { opacity: .22; box-shadow: none; cursor: default; }
+.slots .tile { min-width: 40px; height: 46px; padding: 0 10px; background: var(--lit); color: var(--lit-ink); border-color: var(--accent-deep); box-shadow: 0 3px 0 var(--accent-deep); }
+.slots .tile:disabled { opacity: 1; box-shadow: none; }
+
+.write { display: flex; flex-direction: column; gap: 10px; }
+.field {
+  width: 100%; min-width: 0; padding: 12px 14px; font-size: 22px; font-weight: 700; border-radius: 14px;
+  border: 2px solid var(--edge); background: var(--card);
+}
+.field:focus { outline: none; border-color: var(--accent-deep); }
+.keys { display: flex; flex-wrap: wrap; gap: 6px; }
+.keys button { min-width: 42px; height: 42px; border-radius: 10px; border: 2px solid var(--edge); background: var(--card); font-size: 19px; font-weight: 700; }
+
+.fb { border-radius: 18px; padding: 14px 16px; display: flex; flex-direction: column; gap: 6px; border: 2px solid; animation: rise .18s ease-out; }
+.fb h3 { font-family: var(--display); font-weight: 800; font-size: 23px; line-height: 1.1; }
+.fb.right { background: var(--ok-soft); border-color: var(--ok); } .fb.right h3 { color: var(--ok); }
+.fb.wrong { background: var(--bad-soft); border-color: var(--bad); } .fb.wrong h3 { color: var(--bad); }
+.fb.almost { background: var(--warn-soft); border-color: var(--warn); } .fb.almost h3 { color: var(--warn); }
+.fb .sol { display: flex; align-items: center; gap: 10px; justify-content: space-between; }
+.fb .sol p { font-size: 18px; min-width: 0; overflow-wrap: anywhere; }
+.fb .sol b { font-size: 20px; }
+.fb .note { font-size: 15px; border-top: 1px dashed var(--edge); padding-top: 6px; }
+
+/* ---------- Done / lists ---------- */
+.done-hd { text-align: center; display: flex; flex-direction: column; gap: 6px; align-items: center; }
+.done-hd h2 { font-family: var(--display); font-weight: 800; font-size: clamp(34px, 9vw, 44px); line-height: 1; }
+.big-score { font-family: var(--display); font-weight: 800; font-size: 64px; line-height: 1; font-variant-numeric: tabular-nums; }
+.panel { background: var(--card); border: 2px solid var(--edge); border-radius: 18px; padding: 6px 14px; }
+.rows { list-style: none; margin: 0; padding: 0; }
+.rows li { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 4px 12px; padding: 10px 0; border-top: 1px solid var(--edge); }
+.rows li:first-child { border-top: 0; }
+.rows .pic { font-size: 28px; grid-row: 1 / span 2; }
+.rows .fr { font-weight: 700; min-width: 0; overflow-wrap: anywhere; }
+.rows .de { grid-column: 2; color: var(--muted); font-size: 15px; }
+.rows .side { grid-row: 1 / span 2; grid-column: 3; text-align: right; font-size: 13.5px; font-weight: 700; color: var(--muted); display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+.pips { display: inline-flex; gap: 3px; }
+.pips i { width: 9px; height: 9px; border-radius: 3px; background: var(--edge); }
+.pips i.on { background: var(--ok); } .pips i.new { background: var(--accent-deep); }
+
+/* ---------- Match ---------- */
+.match { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.match .col { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.mcard {
+  min-height: 58px; border-radius: 14px; border: 2px solid var(--edge); background: var(--card); padding: 8px 10px;
+  font-weight: 700; font-size: 16.5px; line-height: 1.2; box-shadow: 0 3px 0 var(--edge); overflow-wrap: anywhere;
+}
+.mcard.sel { border-color: var(--accent-deep); background: var(--lit); color: var(--lit-ink); box-shadow: 0 3px 0 var(--accent-deep); }
+.mcard.sel .g.m { color: var(--lit-m); } .mcard.sel .g.f { color: var(--lit-f); }
+.mcard.ok { border-color: var(--ok); background: var(--ok-soft); box-shadow: none; opacity: .6; cursor: default; }
+.mcard.no { border-color: var(--bad); background: var(--bad-soft); animation: shake .3s; }
+@keyframes shake { 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+
+/* ---------- Test sheet ---------- */
+.paper { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.paper li { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: 4px 12px; align-items: center; padding: 9px 0; border-top: 1px solid var(--edge); }
+.paper li:first-child { border-top: 0; }
+@media (max-width: 430px) { .paper li { grid-template-columns: 1fr; } }
+.paper label { font-weight: 600; }
+.paper .field { font-size: 18px; padding: 9px 12px; }
+.paper .res { grid-column: 1 / -1; font-size: 15px; display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+.mark { font-weight: 700; padding: 1px 8px; border-radius: 99px; font-size: 13px; }
+.mark.right { background: var(--ok-soft); color: var(--ok); }
+.mark.half { background: var(--warn-soft); color: var(--warn); }
+.mark.wrong { background: var(--bad-soft); color: var(--bad); }
+.field.g-right { border-color: var(--ok); } .field.g-half { border-color: var(--warn); } .field.g-wrong { border-color: var(--bad); }
+
+canvas.confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 40; }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+</style>
+</head>
+<body>
+
+<main class="app" id="app"></main>
+
+<script>
+(() => {
+  "use strict";
+  // ---------- Vokabeln: Unité 1, Vocabulaire thématique ----------
+  const GENDER = "Im Deutschen hat das Wort ein anderes Geschlecht.";
+  const WORDS = [
+    { id: "ville", fr: "la ville", art: "la", g: "f", noun: "ville", ipa: "[lavil]", de: "die Stadt", pic: "🏙️", extra: ["y", "e"] },
+    { id: "cinema", fr: "le cinéma", art: "le", g: "m", noun: "cinéma", ipa: "[ləsinema]", de: "das Kino", pic: "🎬", extra: ["e", "s"] },
+    { id: "parc", fr: "le parc", art: "le", g: "m", noun: "parc", ipa: "[ləpaʀk]", de: "der Park", pic: "🌳", extra: ["k", "q"], note: "Auf Französisch mit c am Ende, nicht mit k." },
+    { id: "theatre", fr: "le théâtre", art: "le", g: "m", noun: "théâtre", ipa: "[ləteɑtʀ]", de: "das Theater", pic: "🎭", extra: ["e", "a"], note: "Zwei Akzente: é und â. Und am Ende -re, nicht -er." },
+    { id: "cafe", fr: "le café", art: "le", g: "m", noun: "café", ipa: "[ləkafe]", de: "das Café", pic: "☕", extra: ["e", "k"], note: "Le café heißt auch: der Kaffee." },
+    { id: "restaurant", fr: "le restaurant", art: "le", g: "m", noun: "restaurant", ipa: "[ləʀɛstɔʀɑ̃]", de: "das Restaurant", pic: "🍽️", extra: ["o", "e"] },
+    { id: "hotel", fr: "l'hôtel", art: "l'", g: "m", noun: "hôtel", ipa: "[lotɛl] m.", de: "das Hotel", pic: "🏨", extra: ["o", "e"], note: "Hôtel ist männlich. Vor Vokal oder stummem h wird aus le oder la ein l'." },
+    { id: "musee", fr: "le musée", art: "le", g: "m", noun: "musée", ipa: "[ləmyze]", de: "das Museum", pic: "🏛️", extra: ["e", "z"], note: "Le musée ist männlich, obwohl es auf -ée endet." },
+    { id: "metro", fr: "le métro", art: "le", g: "m", noun: "métro", ipa: "[ləmetʀo]", de: "die U-Bahn, die Metro", q: "die U-Bahn", pic: "🚇", extra: ["e", "ô"], note: GENDER + " Die U-Bahn, aber le métro." },
+    { id: "tour", fr: "la tour", art: "la", g: "f", noun: "tour", ipa: "[latuʀ]", de: "der Turm", pic: "🗼", extra: ["m", "e"], note: GENDER + " Der Turm, aber la tour." },
+    { id: "supermarche", fr: "le supermarché", art: "le", g: "m", noun: "supermarché", ipa: "[ləsypɛʀmaʀʃe]", de: "der Supermarkt", pic: "🛒", extra: ["e", "t"] },
+    { id: "college", fr: "le collège", art: "le", g: "m", noun: "collège", ipa: "[ləkɔlɛʒ]", de: "die Schule", pic: "🏫", extra: ["é", "k"], note: GENDER + " Die Schule, aber le collège." },
+    { id: "stade", fr: "le stade", art: "le", g: "m", noun: "stade", ipa: "[ləstad]", de: "das Stadion", pic: "🏟️", extra: ["t", "i"] },
+    { id: "pardon", fr: "pardon", spell: "pardon", ipa: "[paʀdɔ̃]", de: "Verzeihung, Entschuldigung", pic: "🙏", extra: ["e", "t"] },
+    { id: "ouest", fr: "Où est … ?", spell: "où est", flea: true, ipa: "[uɛ]", de: "Wo ist …?", pic: "📍", extra: ["u", "é"], note: "Auf dem „wo“ sitzt ein „Floh“: où = wo, ou = oder." },
+    { id: "ou", fr: "Où … ?", spell: "où", flea: true, ipa: "[u]", de: "Wo …?, Wohin …?", pic: "❓", extra: ["u", "o"], note: "Fragewort. Auf dem „wo“ sitzt ein „Floh“: où = wo, ou = oder." },
+  ].map(w => ({ ...w, spell: (w.spell || w.noun).normalize("NFC") }));
+  const NOUNS = WORDS.filter(w => w.art);
+  const byId = Object.fromEntries(WORDS.map(w => [w.id, w]));
+  const MAXL = 6, DAY = 864e5, REVIEW_DAYS = [1, 3, 7, 14];
+
+  // ---------- Speicher (nur in diesem Browser) ----------
+  const KEY = "ma-ville.v1";
+  const load = () => { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) { return {}; } };
+  const db = Object.assign({ w: {}, streak: 0, last: null, sound: true }, load());
+  if (!db.w || typeof db.w !== "object") db.w = {};
+  const persist = () => { try { localStorage.setItem(KEY, JSON.stringify(db)); } catch (e) {} };
+  const rec = id => db.w[id] || (db.w[id] = { l: 0 });
+  const lv = id => Math.min(MAXL, (db.w[id] && db.w[id].l) || 0);
+  const isDue = id => lv(id) >= MAXL && ((db.w[id].due || 0) <= Date.now());
+  const dayStr = t => { const d = new Date(t); return d.getFullYear() + "-" + (d.getMonth() + 1) + "-" + d.getDate(); };
+  const streakNow = () => (db.last === dayStr(Date.now()) || db.last === dayStr(Date.now() - DAY)) ? (db.streak || 0) : 0;
+  function touchStreak() {
+    const t = dayStr(Date.now());
+    if (db.last === t) return;
+    db.streak = db.last === dayStr(Date.now() - DAY) ? (db.streak || 0) + 1 : 1;
+    db.last = t; persist();
+  }
+
+  // ---------- Helfer ----------
+  const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+  const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const plain = s => s.normalize("NFD").replace(/[̀-ͯ]/g, "");
+  const norm = s => s.normalize("NFC").toLowerCase()
+    .replace(/[’‘`´]/g, "'").replace(/…|\.\.\./g, " ").replace(/[?!.,;:"]/g, " ")
+    .replace(/'/g, " ").replace(/\s+/g, " ").trim();
+  const frHtml = w => w.art
+    ? `<span class="g ${w.g}">${esc(w.art)}</span>${w.art === "l'" ? "" : " "}${esc(w.noun)}`
+    : esc(w.fr);
+  const levelName = l => l >= 6 ? "gemeistert" : l >= 5 ? "fast geschafft" : l >= 3 ? "geübt" : l >= 1 ? "kennengelernt" : "neu";
+
+  function checkTyped(value, w) {
+    const a = norm(value), t = norm(w.fr);
+    if (!a) return "empty";
+    if (a === t) return "right";
+    if (plain(a) === plain(t)) return w.flea ? "flea" : "accent";
+    if (w.art) {
+      const bare = plain(norm(w.noun)), pa = plain(a);
+      if (pa === bare) return "noart";
+      const m = pa.match(/^(le|la|l|les|un|une|der|die|das)\s?(.+)$/);
+      if (m && m[2] === bare) return "wrongart";
+    }
+    return "wrong";
+  }
+  const PRAISE = ["Richtig!", "Super!", "Très bien !", "Genau!", "Bravo !", "Parfait !"];
+  const praise = () => PRAISE[Math.floor(Math.random() * PRAISE.length)];
+  const FB = {
+    right: () => ({ kind: "right", title: praise() }),
+    wrong: () => ({ kind: "wrong", title: "Noch nicht richtig." }),
+    accent: () => ({ kind: "almost", title: "Fast! Achte auf die Akzente.", lead: "Die Buchstaben stimmen, aber ein Akzent fehlt oder ist falsch." }),
+    flea: () => ({ kind: "wrong", title: "Der Floh fehlt!", lead: "Ohne Akzent heißt ou „oder“. Für „wo“ brauchst du où." }),
+    noart: () => ({ kind: "almost", title: "Der Artikel fehlt!", lead: "Lerne jedes Nomen immer zusammen mit le, la oder l'." }),
+    wrongart: () => ({ kind: "almost", title: "Falscher Artikel!", lead: "Das Wort stimmt, nur der Artikel nicht." }),
+  };
+
+  // ---------- Ton ----------
+  const ICON = {
+    speaker: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16.5 8.5a5 5 0 0 1 0 7"/><path d="M19 6a8.5 8.5 0 0 1 0 12"/></svg>',
+    mute: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M17 9l5 6M22 9l-5 6"/></svg>',
+    close: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+    go: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>',
+  };
+  const canSpeak = (() => { try { return "speechSynthesis" in window && typeof SpeechSynthesisUtterance === "function"; } catch (e) { return false; } })();
+  let frVoice = null, voicesLoaded = false;
+  function pickVoice() {
+    try {
+      const vs = speechSynthesis.getVoices(); voicesLoaded = vs.length > 0;
+      frVoice = vs.find(v => /^fr[-_]FR/i.test(v.lang) && v.localService) || vs.find(v => /^fr[-_]FR/i.test(v.lang)) || vs.find(v => /^fr/i.test(v.lang)) || null;
+    } catch (e) {}
+  }
+  if (canSpeak) { pickVoice(); try { speechSynthesis.addEventListener("voiceschanged", pickVoice); } catch (e) {} }
+  function speak(text, rate = 0.85) {
+    if (!canSpeak) return;
+    try {
+      speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(text.replace(/…|\.\.\./g, " ").replace(/\s+\?/g, "?").replace(/\s+/g, " ").trim());
+      u.lang = "fr-FR"; u.rate = rate; if (frVoice) u.voice = frVoice;
+      speechSynthesis.speak(u);
+    } catch (e) {}
+  }
+  const speakBtn = (text, label = "Anhören") => canSpeak
+    ? `<button class="icon-btn" data-act="speak" data-text="${esc(text)}" aria-label="${esc(label)}: ${esc(text)}" title="${esc(label)}">${ICON.speaker}</button>` : "";
+  let actx = null;
+  function tone(kind) {
+    if (!db.sound) return;
+    try {
+      actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+      if (actx.state === "suspended") actx.resume();
+      const seq = { ok: [[659, 0], [880, .09]], bad: [[220, 0], [185, .13]], done: [[523, 0], [659, .1], [784, .2], [1047, .32]] }[kind];
+      const t0 = actx.currentTime + .01;
+      seq.forEach(([f, d]) => {
+        const o = actx.createOscillator(), g = actx.createGain();
+        o.type = kind === "bad" ? "triangle" : "sine"; o.frequency.value = f;
+        g.gain.setValueAtTime(.0001, t0 + d); g.gain.exponentialRampToValueAtTime(.16, t0 + d + .02); g.gain.exponentialRampToValueAtTime(.0001, t0 + d + .24);
+        o.connect(g); g.connect(actx.destination); o.start(t0 + d); o.stop(t0 + d + .26);
+      });
+    } catch (e) {}
+  }
+
+  // ---------- Lernweg: welche Übung passt zu welcher Stufe ----------
+  function typeFor(w) {
+    const l = lv(w.id);
+    if (l === 0) return "intro";
+    if (l === 1) return "mcFrDe";
+    if (l === 2) return "mcDeFr";
+    if (l === 3) return w.art ? "article" : (canSpeak ? "listen" : "mcDeFr");
+    if (l === 4) return "tiles";
+    if (l === 5) return "type";
+    return canSpeak && Math.random() < .5 ? "dictee" : "type";
+  }
+
+  function planSession() {
+    const due = shuffle(WORDS.filter(w => isDue(w.id))).slice(0, 2);
+    const prog = WORDS.filter(w => lv(w.id) >= 1 && lv(w.id) < MAXL)
+      .sort((a, b) => lv(a.id) - lv(b.id) || ((rec(a.id).seen || 0) - (rec(b.id).seen || 0)));
+    const fresh = WORDS.filter(w => lv(w.id) === 0);
+    const slots = 5 - due.length;
+    const nNew = fresh.length ? Math.min(fresh.length, Math.max(2, slots - prog.length), 4, slots) : 0;
+    const news = fresh.slice(0, nNew);
+    const olds = prog.slice(0, Math.max(0, slots - nNew));
+    return { due, olds, news, words: [...news, ...olds, ...due] };
+  }
+
+  function startLearning() {
+    const p = planSession();
+    if (!p.words.length) {
+      const steps = shuffle(WORDS).slice(0, 6).map(w => ({ id: w.id, force: canSpeak && Math.random() < .5 ? "dictee" : "type", free: true }));
+      return startRun({ title: "Freies Üben", steps, adaptive: false, again: "learn" });
+    }
+    const round1 = [...p.news, ...shuffle([...p.olds, ...p.due])].map(w => ({ id: w.id }));
+    const round2 = shuffle([...p.news, ...p.olds]).map(w => ({ id: w.id }));
+    startRun({ title: "Lernrunde", steps: [...round1, ...round2], adaptive: true, again: "learn" });
+  }
+
+  // ---------- Übungen bauen ----------
+  function makeEx(w, type) {
+    const ex = { w, type };
+    const others = f => shuffle(WORDS.filter(x => x.id !== w.id)).slice(0, 3).map(f);
+    switch (type) {
+      case "intro": ex.ask = "Neues Wort"; break;
+      case "mcFrDe": ex.ask = "Was bedeutet das?"; ex.correct = w.de; ex.options = shuffle([w.de, ...others(x => x.de)]); break;
+      case "listen": ex.ask = "Hör zu. Was bedeutet das Wort?"; ex.correct = w.de; ex.options = shuffle([w.de, ...others(x => x.de)]); break;
+      case "mcDeFr": ex.ask = "Wie heißt das auf Französisch?"; ex.correct = w.id; ex.options = shuffle([w.id, ...others(x => x.id)]); ex.optFr = true; break;
+      case "article": ex.ask = "Welcher Artikel passt?"; ex.correct = w.art; ex.options = ["le", "la", "l'"]; break;
+      case "tiles": {
+        const sp = w.spell, letters = [...sp.replace(/ /g, "")];
+        ex.ask = "Baue das Wort aus den Buchstaben."; ex.target = letters; ex.gap = sp.indexOf(" ") > 0 ? sp.indexOf(" ") - 1 : -1;
+        ex.pool = shuffle([...letters, ...w.extra]).map(t => ({ t, used: false })); ex.placed = []; ex.prefix = w.art || "";
+        break;
+      }
+      case "sentence": {
+        const target = ["Où", "est", ...(w.art === "l'" ? [w.fr] : [w.art, w.noun]), "?"];
+        const decoys = ["Ou", w.art === "la" ? "le" : "la"];
+        ex.ask = "Baue die Frage auf Französisch."; ex.target = target; ex.gap = -1; ex.words = true;
+        ex.pool = shuffle([...target, ...decoys]).map(t => ({ t, used: false })); ex.placed = []; ex.prefix = "";
+        ex.sentence = "Où est " + w.fr + " ?"; ex.de = "Wo ist " + (w.q || w.de) + "?";
+        break;
+      }
+      case "type": ex.ask = w.art ? "Schreib das Wort auf Französisch, mit Artikel." : "Schreib es auf Französisch."; break;
+      case "dictee": ex.ask = w.art ? "Hör zu und schreib das Wort mit Artikel auf." : "Hör zu und schreib es auf."; break;
+    }
+    return ex;
+  }
+
+  // ---------- Zustand ----------
+  const app = document.getElementById("app");
+  let S = { view: "home" };
+
+  function startRun(cfg) {
+    const ids = [...new Set(cfg.steps.map(s => s.id))];
+    S = {
+      view: "run", title: cfg.title, steps: cfg.steps, adaptive: cfg.adaptive, again: cfg.again, total0: cfg.steps.length,
+      i: 0, right: 0, miss: [], before: Object.fromEntries(ids.map(id => [id, lv(id)])), ids,
+    };
+    loadStep(); render();
+  }
+  function loadStep() {
+    const st = S.steps[S.i], w = byId[st.id];
+    S.ex = makeEx(w, st.force || typeFor(w));
+    S.answered = false; S.fb = null; S.spoken = false; S.typed = ""; S.hint = false; S.picked = null;
+  }
+  function grade(w, ok, st) {
+    if (!S.adaptive || st.free) return;
+    const r = rec(w.id), now = Date.now(); r.seen = now;
+    if (ok) {
+      if (!st.retry) {
+        if (r.l >= MAXL) { r.st = Math.min((r.st || 0) + 1, REVIEW_DAYS.length - 1); r.due = now + REVIEW_DAYS[r.st] * DAY; }
+        else { r.l++; if (r.l >= MAXL) { r.st = 0; r.due = now + REVIEW_DAYS[0] * DAY; } }
+      }
+    } else if (r.l >= MAXL) { r.l = 4; r.st = 0; delete r.due; }
+    persist();
+  }
+  function settle(ok, fb) {
+    if (S.answered) return;
+    const st = S.steps[S.i], ex = S.ex, w = ex.w;
+    S.answered = true; S.fb = fb;
+    if (ok) { if (!st.retry) S.right++; }
+    else {
+      if (!S.miss.includes(w.id)) S.miss.push(w.id);
+      const tries = (st.tries || 0) + 1;
+      if (tries <= 2) S.steps.splice(Math.min(S.steps.length, S.i + 3), 0, { id: w.id, force: ex.type, retry: true, free: st.free, tries });
+    }
+    grade(w, ok, st);
+    tone(ok ? "ok" : "bad");
+    if (db.sound && ex.type !== "mcFrDe") setTimeout(() => speak(ex.sentence || w.fr), 420);
+    render();
+  }
+  function advance() {
+    S.i++;
+    if (S.i >= S.steps.length) {
+      if (S.adaptive) touchStreak();
+      S.view = "done"; tone("done"); render(); return;
+    }
+    loadStep(); render();
+  }
+
+  // ---------- Antworten ----------
+  function pick(i) {
+    if (S.answered) return;
+    const ex = S.ex; S.picked = ex.options[i];
+    const ok = S.picked === ex.correct;
+    settle(ok, ok ? FB.right() : FB.wrong());
+  }
+  function submitTyped(value) {
+    if (S.answered) return;
+    const res = checkTyped(value, S.ex.w);
+    if (res === "empty") return;
+    S.typed = value;
+    settle(res === "right", FB[res]());
+  }
+  function place(i) {
+    const ex = S.ex; if (S.answered || ex.pool[i].used || ex.placed.length >= ex.target.length) return;
+    ex.pool[i].used = true; ex.placed.push(i); render();
+  }
+  function unplace(slot) {
+    const ex = S.ex; if (S.answered || slot >= ex.placed.length) return;
+    ex.pool[ex.placed[slot]].used = false; ex.placed.splice(slot, 1); render();
+  }
+  function checkTiles() {
+    const ex = S.ex; if (S.answered || ex.placed.length < ex.target.length) return;
+    const built = ex.placed.map(i => ex.pool[i].t);
+    const a = built.join(ex.words ? " " : ""), t = ex.target.join(ex.words ? " " : "");
+    S.typed = ex.words ? built.join(" ") : (ex.prefix ? ex.prefix + (ex.prefix === "l'" ? "" : " ") : "") + a;
+    if (a === t) return settle(true, FB.right());
+    if (ex.words) {
+      if (built[0] === "Ou" && built.slice(1).join(" ") === ex.target.slice(1).join(" ")) return settle(false, FB.flea());
+      if (plain(a).replace(/\b(le|la)\b/g, "_") === plain(t).replace(/\b(le|la)\b/g, "_") && built[0] === "Où") return settle(false, FB.wrongart());
+      return settle(false, FB.wrong());
+    }
+    if (plain(a) === plain(t)) return settle(false, ex.w.flea ? FB.flea() : FB.accent());
+    settle(false, FB.wrong());
+  }
+
+  // ---------- Ansichten ----------
+  function render() {
+    app.innerHTML = ({ home: homeView, run: runView, done: doneView, match: matchView, test: testView })[S.view]();
+    afterRender();
+  }
+
+  function homeView() {
+    const p = planSession();
+    const lit = WORDS.reduce((s, w) => s + lv(w.id), 0) / (WORDS.length * MAXL);
+    const mastered = WORDS.filter(w => lv(w.id) >= MAXL).length;
+    const sn = streakNow();
+    let ctaT = "Weiter lernen", ctaS;
+    if (!p.words.length) {
+      const next = Math.min(...WORDS.map(w => rec(w.id).due || Infinity));
+      const days = Math.max(1, Math.ceil((next - Date.now()) / DAY));
+      ctaT = "Frei üben"; ctaS = `Alles gemeistert! Nächste Wiederholung ${days <= 1 ? "morgen" : "in " + days + " Tagen"}.`;
+    } else {
+      if (!WORDS.some(w => lv(w.id) > 0)) ctaT = "Los geht's";
+      const parts = [];
+      if (p.news.length) parts.push(p.news.length + (p.news.length === 1 ? " neues Wort" : " neue Wörter"));
+      if (p.olds.length) parts.push(p.olds.length + " zum Üben");
+      if (p.due.length) parts.push(p.due.length + " zum Wiederholen");
+      ctaS = parts.join(" · ") + " · ca. 3 Minuten";
+    }
+    const extras = [
+      ["match", "Paare finden", "Französisch und Deutsch verbinden."],
+      ["sentence", "Fragen bauen", "Où est … ? aus Wörtern zusammensetzen."],
+      canSpeak ? ["dictee", "Hördiktat", "Anhören und richtig aufschreiben."] : null,
+      ["test", "Vokabeltest", "Wie in der Schule: alle 16 Wörter schreiben."],
+    ].filter(Boolean);
+    return `
+      <header class="hd">
+        <div><p class="eyebrow">Französisch · Unité 1</p><h1>Ma ville</h1></div>
+        <div class="hd-tools">
+          <span class="streak ${sn ? "" : "cold"}" title="Tage in Folge gelernt"><i></i>${sn} ${sn === 1 ? "Tag" : "Tage"}</span>
+          <button class="icon-btn" data-act="sound" aria-pressed="${db.sound}" aria-label="${db.sound ? "Ton ausschalten" : "Ton einschalten"}" title="${db.sound ? "Ton ist an" : "Ton ist aus"}">${db.sound ? ICON.speaker : ICON.mute}</button>
+        </div>
+      </header>
+
+      <button class="cta" data-act="learn"><b>${ctaT}</b><span>${ctaS}</span>${ICON.go}</button>
+
+      <section>
+        <div class="sec-hd"><h2>Deine Stadt</h2><span>${Math.round(lit * 100)} % erleuchtet</span></div>
+        <div class="town">
+          ${WORDS.map(w => {
+            const l = lv(w.id);
+            return `<button class="place ${l ? "on" : ""} ${l >= MAXL ? "gold" : ""}" data-act="sheet" data-id="${w.id}" aria-label="${esc(w.fr)}: ${levelName(l)}">
+              <span class="pic" aria-hidden="true">${w.pic}</span><span class="nm">${frHtml(w)}</span>
+              <span class="lvl"><i style="width:${(l / MAXL) * 100}%"></i></span>${isDue(w.id) ? '<span class="due" title="Wiederholung fällig"></span>' : ""}
+            </button>`;
+          }).join("")}
+        </div>
+        <p class="legend"><span><b class="g m">le</b> = männlich</span><span><b class="g f">la</b> = weiblich</span><span>${mastered} von ${WORDS.length} gemeistert. Tippe auf einen Ort für Details.</span></p>
+      </section>
+
+      <section>
+        <div class="sec-hd"><h2>Extra üben</h2></div>
+        <div class="extras">
+          ${extras.map(([k, n, d]) => `<button class="extra" data-act="extra" data-k="${k}"><b>${n}</b><span>${d}</span></button>`).join("")}
+        </div>
+      </section>
+
+      <div class="reset">
+        ${S.confirmReset
+          ? `<p class="small">Lernstand wirklich löschen? Die ganze Stadt wird wieder dunkel.</p>
+             <div class="two" style="width:100%;max-width:380px"><button class="btn plain" data-act="reset-yes">Ja, löschen</button><button class="btn plain" data-act="reset-no">Abbrechen</button></div>`
+          : `<button class="linkish" data-act="reset-ask">Lernstand zurücksetzen</button>`}
+      </div>
+      ${S.sheet ? sheetView(byId[S.sheet]) : ""}`;
+  }
+
+  function sheetView(w) {
+    const l = lv(w.id), r = rec(w.id);
+    let status = `Stufe ${l} von ${MAXL} · ${levelName(l)}`;
+    if (l >= MAXL) {
+      const days = Math.ceil(((r.due || 0) - Date.now()) / DAY);
+      status = "Gemeistert · " + (days <= 0 ? "Wiederholung fällig" : days === 1 ? "Wiederholung morgen" : `Wiederholung in ${days} Tagen`);
+    }
+    return `<div class="veil" data-act="sheet-close">
+      <div class="sheet" role="dialog" aria-modal="true" aria-label="${esc(w.fr)}">
+        <div class="sheet-top">
+          <span class="pic" aria-hidden="true">${w.pic}</span>
+          <div style="flex:1;min-width:0"><div class="w" lang="fr">${frHtml(w)}</div><div class="ipa">${esc(w.ipa)}</div></div>
+          ${speakBtn(w.fr)}
+        </div>
+        <p style="font-size:20px;font-weight:700">${esc(w.de)}</p>
+        ${w.note ? `<p class="note">${esc(w.note)}</p>` : ""}
+        <p class="small">${status}</p>
+        <div class="two"><button class="btn" data-act="drill" data-id="${w.id}">Dieses Wort üben</button><button class="btn plain" data-act="sheet-x">Schließen</button></div>
+      </div>
+    </div>`;
+  }
+
+  function keysBar() {
+    return `<div class="keys" aria-label="Sonderzeichen">${["é", "è", "ê", "à", "â", "ô", "î", "û", "ù", "ç", "'"].map(c => `<button type="button" data-act="key" data-c="${c}" aria-label="${c} einfügen">${c}</button>`).join("")}</div>`;
+  }
+
+  function promptView(ex) {
+    const w = ex.w, t = ex.type;
+    if (t === "intro") {
+      return `<span class="intro-tag">Neues Wort</span>
+        <div class="prompt center">
+          <span class="pic" aria-hidden="true" style="font-size:72px">${w.pic}</span>
+          <div class="txt"><div class="big" lang="fr">${frHtml(w)}</div><div class="ipa">${esc(w.ipa)}</div>
+          <div style="font-size:22px;font-weight:700;margin-top:6px">${esc(w.de)}</div></div>
+          ${canSpeak ? `<div class="listen-row"><button class="pill" data-act="say">${ICON.speaker}Anhören</button><button class="pill ghost" data-act="say-slow">Langsam</button></div>` : ""}
+        </div>
+        ${w.note ? `<p class="intro-note">${esc(w.note)}</p>` : ""}`;
+    }
+    if (t === "mcFrDe") {
+      return `<div class="prompt"><div class="txt"><div class="big" lang="fr">${frHtml(w)}</div><div class="ipa">${esc(w.ipa)}</div></div>${speakBtn(w.fr)}</div>`;
+    }
+    if (t === "listen" || t === "dictee") {
+      const showHint = t === "dictee" && (w.flea || S.hint || S.answered);
+      return `<div class="prompt center">
+          <div class="listen-row"><button class="pill" data-act="say">${ICON.speaker}Anhören</button><button class="pill ghost" data-act="say-slow">Langsam</button></div>
+          ${t === "dictee" ? (showHint ? `<p class="small">${w.flea ? "Fragewort: " : "Bedeutung: "}<b>${esc(w.de)}</b></p>` : `<button class="linkish" data-act="hint">Bedeutung zeigen</button>`) : ""}
+        </div>
+        ${voicesLoaded && !frVoice ? `<p class="small" style="text-align:center">Auf diesem Gerät ist keine französische Stimme installiert. Die Aussprache klingt deshalb vielleicht nicht französisch.</p>` : ""}`;
+    }
+    if (t === "article") {
+      return `<div class="prompt"><span class="pic" aria-hidden="true">${w.pic}</span><div class="txt"><div class="big" lang="fr"><span class="blank"></span>${esc(w.noun)}</div><div class="small">${esc(w.de)}</div></div></div>`;
+    }
+    return `<div class="prompt"><span class="pic" aria-hidden="true">${w.pic}</span><div class="txt"><div class="big">${esc(ex.de || w.de)}</div></div></div>`;
+  }
+
+  function bodyView(ex) {
+    const t = ex.type, w = ex.w;
+    if (t === "intro") return `<button class="btn" data-act="intro-ok" id="mainBtn">Verstanden</button>`;
+    if (ex.options) {
+      return `<div class="opts ${t === "article" ? "three" : ""}">${ex.options.map((o, i) => {
+        let cls = "";
+        if (S.answered) cls = o === ex.correct ? "right" : o === S.picked ? "wrong" : "dim";
+        const label = ex.optFr ? frHtml(byId[o]) : esc(o);
+        return `<button class="opt ${cls}" data-act="pick" data-i="${i}" ${S.answered ? "disabled" : ""}>${t === "article" ? "" : `<span class="k" aria-hidden="true">${i + 1}</span>`}<span ${ex.optFr || t === "article" ? 'lang="fr"' : ""}>${label}</span></button>`;
+      }).join("")}</div>`;
+    }
+    if (t === "tiles" || t === "sentence") {
+      const n = ex.target.length;
+      let slots = "";
+      for (let i = 0; i < n; i++) {
+        const gap = i === ex.gap ? " gap-after" : "";
+        slots += i < ex.placed.length
+          ? `<button class="tile${gap}" data-act="unplace" data-i="${i}" ${S.answered ? "disabled" : ""} aria-label="${esc(ex.pool[ex.placed[i]].t)} entfernen">${esc(ex.pool[ex.placed[i]].t)}</button>`
+          : `<span class="slot${ex.words ? " word" : ""}${gap}"></span>`;
+      }
+      const prefix = ex.prefix ? `<span class="fix g ${w.g}" lang="fr">${esc(ex.prefix)}</span>` : "";
+      return `<div class="slots" lang="fr" aria-label="Deine Antwort">${prefix}${slots}</div>
+        ${S.answered ? "" : `<div class="pool" lang="fr">${ex.pool.map((p, i) => `<button class="tile" data-act="place" data-i="${i}" ${p.used ? "disabled" : ""}>${esc(p.t)}</button>`).join("")}</div>
+        <button class="btn" data-act="check-tiles" id="mainBtn" ${ex.placed.length < n ? "disabled" : ""}>Prüfen</button>`}`;
+    }
+    return `<form class="write" id="wform" autocomplete="off">
+        <input class="field" id="answer" type="text" lang="fr" autocapitalize="off" autocorrect="off" spellcheck="false"
+          aria-label="Deine Antwort auf Französisch" placeholder="${t === "dictee" ? "Was hörst du?" : "z. B. le parc"}" value="${esc(S.typed)}" ${S.answered ? "disabled" : ""}>
+        ${S.answered ? "" : keysBar() + `<button class="btn" type="submit">Prüfen</button>`}
+      </form>`;
+  }
+
+  function feedbackView(ex) {
+    const w = ex.w, r = S.fb;
+    const sol = ex.sentence
+      ? `<b lang="fr">${esc(ex.sentence)}</b>`
+      : `<b lang="fr">${frHtml(w)}</b> <span class="ipa">${esc(w.ipa)}</span> = ${esc(w.de)}`;
+    const showYours = r.kind !== "right" && S.typed && ["type", "dictee", "tiles", "sentence"].includes(ex.type);
+    return `<div class="fb ${r.kind}" role="status">
+        <h3>${esc(r.title)}</h3>
+        ${r.lead ? `<p>${esc(r.lead)}</p>` : ""}
+        ${showYours ? `<p>Deine Antwort: <b>${esc(S.typed)}</b></p>` : ""}
+        <div class="sol"><p>${r.kind === "right" ? "" : "Richtig ist: "}${sol}</p>${speakBtn(ex.sentence || w.fr)}</div>
+        ${w.note && !ex.sentence ? `<p class="note">${esc(w.note)}</p>` : ""}
+      </div>
+      <button class="btn" data-act="next" id="mainBtn">${S.i + 1 >= S.steps.length ? "Fertig" : "Weiter"}</button>`;
+  }
+
+  function runView() {
+    const ex = S.ex;
+    return `
+      <div class="run-top">
+        <button class="icon-btn" data-act="home" aria-label="Zurück zur Stadt" title="Beenden">${ICON.close}</button>
+        <div class="track" aria-hidden="true"><i style="width:${((S.i + (S.answered ? 1 : 0)) / S.steps.length) * 100}%"></i></div>
+        <span class="n">${Math.min(S.i + 1, S.steps.length)}/${S.steps.length}</span>
+      </div>
+      ${ex.type === "intro" ? "" : `<h2 class="ask">${esc(ex.ask)}</h2>`}
+      ${promptView(ex)}
+      ${bodyView(ex)}
+      ${S.answered && S.fb ? feedbackView(ex) : ""}`;
+  }
+
+  function pips(before, after) {
+    return `<span class="pips" aria-label="Stufe ${after} von ${MAXL}">${Array.from({ length: MAXL }, (_, i) => `<i class="${i < Math.min(before, after) ? "on" : i < after ? "new" : ""}"></i>`).join("")}</span>`;
+  }
+
+  function doneView() {
+    if (S.adaptive) {
+      const sn = streakNow();
+      const newly = S.ids.filter(id => S.before[id] < MAXL && lv(id) >= MAXL).length;
+      return `
+        <div class="done-hd">
+          <p class="eyebrow">${esc(S.title)}</p>
+          <h2>${newly ? "Gemeistert!" : "Geschafft!"}</h2>
+          <p class="small">${sn > 1 ? `${sn} Tage in Folge gelernt.` : "Deine Stadt wird heller."}</p>
+        </div>
+        <section class="panel"><ul class="rows">
+          ${S.ids.map(id => {
+            const w = byId[id], b = S.before[id], a = lv(id);
+            const tag = a >= MAXL && b < MAXL ? "gemeistert" : a > b ? "+" + (a - b) : a < b ? "nochmal üben" : (S.miss.includes(id) ? "nochmal üben" : a >= MAXL ? "wiederholt" : "gehalten");
+            return `<li><span class="pic" aria-hidden="true">${w.pic}</span><span class="fr" lang="fr">${frHtml(w)}</span><span class="de">${esc(w.de)}</span>
+              <span class="side">${pips(b, a)}<span>${tag}</span></span></li>`;
+          }).join("")}
+        </ul></section>
+        <div class="stack"><button class="btn" data-act="learn" id="mainBtn">Noch eine Runde</button><button class="btn plain" data-act="home">Zur Stadt</button></div>`;
+    }
+    const missed = S.miss.map(id => byId[id]);
+    return `
+      <div class="done-hd">
+        <p class="eyebrow">${esc(S.title)}</p>
+        <div class="big-score">${S.right}/${S.total0}</div>
+        <p class="small">${S.right === S.total0 ? "Alles beim ersten Versuch richtig. Parfait !" : "beim ersten Versuch richtig"}</p>
+      </div>
+      ${missed.length ? `<section class="panel"><ul class="rows">${missed.map(w => `<li><span class="pic" aria-hidden="true">${w.pic}</span><span class="fr" lang="fr">${frHtml(w)}</span><span class="de">${esc(w.de)}</span><span class="side"><span>nochmal üben</span></span></li>`).join("")}</ul></section>` : ""}
+      <div class="stack"><button class="btn" data-act="again" id="mainBtn">Nochmal</button><button class="btn plain" data-act="home">Zur Stadt</button></div>`;
+  }
+
+  // ---------- Paare finden ----------
+  function startMatch() {
+    const ids = shuffle(WORDS).slice(0, 6).map(w => w.id);
+    S = { view: "match", m: { ids, left: shuffle(ids), right: shuffle(ids), selL: null, selR: null, done: [], bad: null, errors: 0, t0: Date.now(), time: null } };
+    render();
+  }
+  function pickMatch(side, id) {
+    const m = S.m; if (m.done.includes(id) || m.bad) return;
+    if (side === "L") { m.selL = m.selL === id ? null : id; if (m.selL && db.sound) speak(byId[id].fr); } else m.selR = m.selR === id ? null : id;
+    if (m.selL && m.selR) {
+      if (m.selL === m.selR) {
+        m.done.push(m.selL); m.selL = m.selR = null;
+        if (m.done.length === m.ids.length) { m.time = Math.round((Date.now() - m.t0) / 1000); tone("done"); } else tone("ok");
+      } else {
+        m.errors++; m.bad = [m.selL, m.selR]; tone("bad");
+        setTimeout(() => { if (S.view === "match" && S.m === m) { m.bad = null; m.selL = m.selR = null; render(); } }, 560);
+      }
+    }
+    render();
+  }
+  function matchView() {
+    const m = S.m;
+    const card = (side, id) => {
+      const w = byId[id], sel = (side === "L" ? m.selL : m.selR) === id;
+      const cls = m.done.includes(id) ? "ok" : m.bad && m.bad[side === "L" ? 0 : 1] === id ? "no" : sel ? "sel" : "";
+      return `<button class="mcard ${cls}" data-act="match" data-side="${side}" data-id="${id}" ${m.done.includes(id) ? "disabled" : ""} aria-pressed="${sel}" ${side === "L" ? 'lang="fr"' : ""}>${side === "L" ? frHtml(w) : esc(w.de)}</button>`;
+    };
+    return `
+      <div class="run-top">
+        <button class="icon-btn" data-act="home" aria-label="Zurück zur Stadt">${ICON.close}</button>
+        <div class="track" aria-hidden="true"><i style="width:${(m.done.length / m.ids.length) * 100}%"></i></div>
+        <span class="n">${m.done.length}/${m.ids.length}</span>
+      </div>
+      <h2 class="ask">${m.time === null ? "Tippe ein französisches und das passende deutsche Wort an." : "Alle Paare gefunden!"}</h2>
+      <div class="match"><div class="col">${m.left.map(id => card("L", id)).join("")}</div><div class="col">${m.right.map(id => card("R", id)).join("")}</div></div>
+      ${m.time === null ? "" : `
+        <p class="small" style="text-align:center">${m.time} Sekunden · ${m.errors === 0 ? "ohne Fehler" : m.errors === 1 ? "1 Fehler" : m.errors + " Fehler"}</p>
+        <div class="stack"><button class="btn" data-act="extra" data-k="match" id="mainBtn">Neue Paare</button><button class="btn plain" data-act="home">Zur Stadt</button></div>`}`;
+  }
+
+  // ---------- Vokabeltest ----------
+  function startTest() { S = { view: "test", t: { order: shuffle(WORDS).map(w => w.id), vals: {}, res: null, pts: 0 } }; render(); window.scrollTo({ top: 0 }); }
+  function gradeTest() {
+    const t = S.t; t.res = {}; t.pts = 0;
+    t.order.forEach(id => {
+      const el = document.getElementById("t_" + id); const v = el ? el.value : ""; t.vals[id] = v;
+      const r = checkTyped(v, byId[id]);
+      const g = r === "right" ? "right" : r === "accent" ? "half" : "wrong";
+      t.res[id] = { g, r }; t.pts += g === "right" ? 1 : g === "half" ? .5 : 0;
+      if (g === "wrong" && lv(id) > 4) { const x = rec(id); x.l = 4; x.st = 0; delete x.due; }
+    });
+    persist(); tone(t.pts === t.order.length ? "done" : "ok"); render(); window.scrollTo({ top: 0 });
+  }
+  function testView() {
+    const t = S.t, graded = !!t.res;
+    const WHY = { accent: "Akzent fehlt oder ist falsch", flea: "ou ohne Akzent heißt „oder“", noart: "Artikel fehlt", wrongart: "falscher Artikel", empty: "nichts geschrieben", wrong: "" };
+    const rows = t.order.map(id => {
+      const w = byId[id], r = graded ? t.res[id] : null;
+      return `<li><label for="t_${id}">${esc(w.de)}</label>
+        <input class="field ${r ? "g-" + r.g : ""}" id="t_${id}" type="text" lang="fr" autocapitalize="off" autocorrect="off" spellcheck="false" autocomplete="off" value="${esc(t.vals[id] || "")}" ${graded ? "disabled" : ""}>
+        ${r ? `<div class="res"><span class="mark ${r.g}">${r.g === "right" ? "1 Punkt" : r.g === "half" ? "½ Punkt" : "0 Punkte"}</span>${r.g === "right" ? "" : `<span>Richtig: <b lang="fr">${frHtml(w)}</b>${WHY[r.r] ? " · " + WHY[r.r] : ""}</span>`}</div>` : ""}</li>`;
+    }).join("");
+    const pts = String(t.pts).replace(".", ",");
+    return `
+      <div class="run-top">
+        <button class="icon-btn" data-act="home" aria-label="Zurück zur Stadt">${ICON.close}</button>
+        <h2 class="ask" style="flex:1">Vokabeltest</h2>
+      </div>
+      ${graded
+        ? `<div class="done-hd"><div class="big-score">${pts}<span style="font-size:.45em"> / ${t.order.length}</span></div>
+             <p class="small">Punkte. Ein fehlender Akzent zählt als halber Punkt. ${t.pts === t.order.length ? "Parfait !" : "Die Fehler kommen in der nächsten Lernrunde wieder dran."}</p></div>`
+        : `<p class="small">Schreib jedes Wort auf Französisch, Nomen mit Artikel. Es gibt keine Hilfe, ausgewertet wird erst am Ende.</p>`}
+      <form id="tform" autocomplete="off" class="stack">
+        <section class="panel"><ol class="paper">${rows}</ol></section>
+        ${graded ? "" : keysBar() + `<button class="btn" type="submit">Abgeben</button>`}
+      </form>
+      ${graded ? `<div class="stack"><button class="btn" data-act="extra" data-k="test" id="mainBtn">Neuer Test</button><button class="btn plain" data-act="home">Zur Stadt</button></div>` : ""}`;
+  }
+
+  // ---------- Nach dem Zeichnen ----------
+  let lastField = null;
+  function afterRender() {
+    const fine = matchMedia("(pointer: fine)").matches;
+    if (S.view === "run") {
+      const ex = S.ex, t = ex.type;
+      if (!S.answered && !S.spoken) {
+        S.spoken = true;
+        if (t === "listen" || t === "dictee") speak(ex.w.fr);
+        else if ((t === "intro" || t === "mcFrDe") && db.sound) speak(ex.w.fr);
+      }
+      const f = document.getElementById("wform");
+      if (f) f.addEventListener("submit", e => { e.preventDefault(); submitTyped(document.getElementById("answer").value); });
+      const inp = document.getElementById("answer");
+      if (S.answered) { const b = document.getElementById("mainBtn"); if (b) b.focus({ preventScroll: true }); }
+      else if (inp && fine) inp.focus();
+    }
+    if (S.view === "test") {
+      const f = document.getElementById("tform");
+      if (f) f.addEventListener("submit", e => { e.preventDefault(); if (!S.t.res) gradeTest(); });
+    }
+    if (S.view === "done") {
+      window.scrollTo({ top: 0 });
+      const perfect = S.adaptive ? S.ids.some(id => S.before[id] < MAXL && lv(id) >= MAXL) : S.right === S.total0;
+      if (perfect) confetti();
+    }
+  }
+
+  // ---------- Bedienung ----------
+  app.addEventListener("focusin", e => { if (e.target.matches && e.target.matches("input.field")) lastField = e.target; });
+  app.addEventListener("pointerdown", e => { if (e.target.closest('[data-act="key"]')) e.preventDefault(); });
+  app.addEventListener("click", e => {
+    const b = e.target.closest("[data-act]"); if (!b) return;
+    const d = b.dataset;
+    switch (d.act) {
+      case "speak": speak(d.text); break;
+      case "say": speak(S.ex.w.fr); break;
+      case "say-slow": speak(S.ex.w.fr, .55); break;
+      case "hint": S.hint = true; S.typed = (document.getElementById("answer") || {}).value || ""; render(); break;
+      case "sound": db.sound = !db.sound; persist(); if (db.sound) tone("ok"); render(); break;
+      case "learn": startLearning(); break;
+      case "home": try { if (canSpeak) speechSynthesis.cancel(); } catch (err) {} S = { view: "home" }; render(); window.scrollTo({ top: 0 }); break;
+      case "sheet": S.sheet = d.id; render(); if (db.sound) speak(byId[d.id].fr); break;
+      case "sheet-close": if (e.target === b) { S.sheet = null; render(); } break;
+      case "sheet-x": S.sheet = null; render(); break;
+      case "drill": startDrill(d.id); break;
+      case "extra": startExtra(d.k); break;
+      case "again": if (S.again === "learn") startLearning(); else if (S.again.startsWith("drill:")) startDrill(S.again.slice(6)); else startExtra(S.again); break;
+      case "intro-ok": { const st = S.steps[S.i]; S.answered = true; grade(S.ex.w, true, st); S.right++; advance(); break; }
+      case "pick": pick(+d.i); break;
+      case "place": place(+d.i); break;
+      case "unplace": unplace(+d.i); break;
+      case "check-tiles": checkTiles(); break;
+      case "next": advance(); break;
+      case "match": pickMatch(d.side, d.id); break;
+      case "key": {
+        const inp = (lastField && document.contains(lastField) && !lastField.disabled) ? lastField : document.getElementById("answer");
+        if (!inp) break;
+        const s = inp.selectionStart ?? inp.value.length, en = inp.selectionEnd ?? inp.value.length;
+        inp.value = inp.value.slice(0, s) + d.c + inp.value.slice(en); inp.focus(); inp.setSelectionRange(s + 1, s + 1);
+        break;
+      }
+      case "reset-ask": S.confirmReset = true; render(); break;
+      case "reset-no": S.confirmReset = false; render(); break;
+      case "reset-yes": db.w = {}; db.streak = 0; db.last = null; persist(); S = { view: "home" }; render(); break;
+    }
+  });
+  function startDrill(id) {
+    const w = byId[id];
+    startRun({ title: w.fr, adaptive: false, again: "drill:" + id,
+      steps: ["mcFrDe", w.art ? "article" : "mcDeFr", "tiles", "type"].map(force => ({ id, force, free: true })) });
+  }
+  function startExtra(k) {
+    if (k === "match") return startMatch();
+    if (k === "test") return startTest();
+    if (k === "dictee") return startRun({ title: "Hördiktat", adaptive: false, again: "dictee", steps: shuffle(WORDS).map(w => ({ id: w.id, force: "dictee", free: true })) });
+    if (k === "sentence") return startRun({ title: "Fragen bauen", adaptive: false, again: "sentence", steps: shuffle(NOUNS).slice(0, 8).map(w => ({ id: w.id, force: "sentence", free: true })) });
+  }
+
+  document.addEventListener("keydown", e => {
+    if (e.altKey || e.ctrlKey || e.metaKey) return;
+    if (e.key === "Escape" && S.view === "home" && S.sheet) { S.sheet = null; render(); return; }
+    if (S.view !== "run") return;
+    const tag = e.target.tagName, ex = S.ex;
+    if (tag === "INPUT") return;
+    if (e.key === "Enter" && tag !== "BUTTON") {
+      e.preventDefault();
+      if (S.answered) advance();
+      else if (ex.type === "intro") app.querySelector('[data-act="intro-ok"]').click();
+      else if (ex.target) checkTiles();
+      return;
+    }
+    if (S.answered) return;
+    if (ex.options && /^[1-4]$/.test(e.key) && +e.key <= ex.options.length) { pick(+e.key - 1); return; }
+    if (ex.target && !ex.words) {
+      if (e.key === "Backspace") { e.preventDefault(); unplace(ex.placed.length - 1); return; }
+      if (e.key.length === 1) { const i = ex.pool.findIndex(p => !p.used && p.t === e.key.toLowerCase()); if (i >= 0) place(i); }
+    }
+  });
+
+  // ---------- Konfetti ----------
+  function confetti() {
+    if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const c = document.createElement("canvas"); c.className = "confetti"; document.body.appendChild(c);
+    const ctx = c.getContext("2d"), dpr = window.devicePixelRatio || 1;
+    const W = c.width = innerWidth * dpr, H = c.height = innerHeight * dpr;
+    const cs = getComputedStyle(document.documentElement);
+    const cols = ["--accent", "--m", "--f", "--ok", "--accent-deep"].map(v => cs.getPropertyValue(v).trim());
+    const P = Array.from({ length: 130 }, () => ({
+      x: W / 2 + (Math.random() - .5) * W * .3, y: H * .32, vx: (Math.random() - .5) * 14 * dpr, vy: (-Math.random() * 14 - 4) * dpr,
+      s: (4 + Math.random() * 5) * dpr, r: Math.random() * 6, vr: (Math.random() - .5) * .3, c: cols[Math.floor(Math.random() * cols.length)],
+    }));
+    const t0 = performance.now();
+    (function frame(t) {
+      ctx.clearRect(0, 0, W, H);
+      P.forEach(p => { p.vy += .45 * dpr; p.vx *= .99; p.x += p.vx; p.y += p.vy; p.r += p.vr;
+        ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.r); ctx.fillStyle = p.c; ctx.fillRect(-p.s / 2, -p.s / 4, p.s, p.s / 2); ctx.restore(); });
+      if (t - t0 < 2200) requestAnimationFrame(frame); else c.remove();
+    })(t0);
+  }
+
+  render();
+})();
+</script>
+</body>
+</html>
